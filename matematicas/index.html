@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solovant e-Rubric</title>
+<style>
+:root {
+  --teal:      #1D9E75;
+  --teal-dk:   #0F6E56;
+  --teal-lt:   #E1F5EE;
+  --teal-bd:   #9FE1CB;
+  --blue:      #378ADD;
+  --blue-lt:   #E6F1FB;
+  --blue-bd:   #B5D4F4;
+  --amber:     #EF9F27;
+  --amber-lt:  #FAEEDA;
+  --amber-bd:  #FAC775;
+  --red:       #E24B4A;
+  --red-lt:    #FCEBEB;
+  --red-bd:    #F7C1C1;
+  --gray:      #888780;
+  --gray-lt:   #F1EFE8;
+  --gray-bd:   #D3D1C7;
+  --purple:    #534AB7;
+  --purple-lt: #EEEDFE;
+  --purple-bd: #CECBF6;
+  --text:      #2C2C2A;
+  --text2:     #5F5E5A;
+  --text3:     #9C9A92;
+  --border:    #E2E0D8;
+  --bg:        #F9F8F5;
+  --bg2:       #FFFFFF;
+  --r:         10px;
+  --r-lg:      14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+/* ── LOADING ── */
+#loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100vh; gap: 16px;
+  color: var(--text2); font-size: 14px;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── ERROR ── */
+#error-view {
+  display: none; padding: 32px; max-width: 560px; margin: 0 auto;
+}
+.error-box {
+  background: var(--red-lt); border: 1px solid var(--red-bd);
+  border-radius: var(--r-lg); padding: 20px 24px;
+}
+.error-box h2 { color: var(--red); font-size: 15px; margin-bottom: 8px; }
+.error-box pre {
+  font-size: 12px; color: var(--text2); background: var(--bg2);
+  border-radius: var(--r); padding: 10px; margin-top: 10px;
+  white-space: pre-wrap; border: 1px solid var(--border);
+}
+
+/* ── APP SHELL ── */
+#app { display: none; }
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 12px 20px; display: flex; align-items: center;
+  gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 10;
+}
+.topbar-title { flex: 1; min-width: 160px; }
+.topbar-title h1 { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.topbar-title p  { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ── BADGE ── */
+.badge {
+  font-size: 11px; font-weight: 600; padding: 2px 9px;
+  border-radius: 20px; white-space: nowrap;
+}
+.badge-sum  { background: var(--teal-lt);   color: var(--teal-dk);  border: 1px solid var(--teal-bd); }
+.badge-form { background: var(--purple-lt); color: var(--purple);   border: 1px solid var(--purple-bd); }
+.badge-col  { background: var(--teal-lt);   color: var(--teal-dk);  border: 1px solid var(--teal-bd); }
+.badge-grd  { background: var(--blue-lt);   color: #185FA5;         border: 1px solid var(--blue-bd); }
+.badge-std  { background: var(--amber-lt);  color: #854F0B;         border: 1px solid var(--amber-bd); }
+.badge-none { background: var(--gray-lt);   color: var(--gray);     border: 1px solid var(--gray-bd); }
+
+/* ── TABS ── */
+.tabs {
+  display: flex; gap: 2px; background: var(--border);
+  border-radius: var(--r); padding: 3px; margin: 16px 16px 0;
+}
+.tab {
+  flex: 1; text-align: center; padding: 7px 10px;
+  border-radius: 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; color: var(--text2); transition: all .15s;
+  user-select: none;
+}
+.tab.active {
+  background: var(--bg2); color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+/* ── VIEWS ── */
+.view { display: none; padding: 16px; }
+.view.active { display: block; }
+
+/* ── SCORE DASHBOARD ── */
+.score-dash {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px; margin-bottom: 16px;
+}
+.score-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 10px; text-align: center;
+}
+.score-val { font-size: 24px; font-weight: 700; line-height: 1; }
+.score-sub { font-size: 10px; color: var(--text3); margin-top: 4px; line-height: 1.3; }
+.score-card.highlight { border-color: var(--teal); background: var(--teal-lt); }
+.score-card.highlight .score-val { color: var(--teal-dk); }
+
+/* ── ACTIVITY SELECTOR ── */
+.act-selector { margin-bottom: 14px; }
+.act-selector select {
+  width: 100%; font-size: 14px; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: var(--r);
+  background: var(--bg2); color: var(--text); outline: none;
+  font-weight: 500;
+}
+.act-selector select:focus { border-color: var(--teal); }
+.act-meta {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-top: 8px; align-items: center; font-size: 12px; color: var(--text2);
+}
+
+/* ── CRITERION CARD ── */
+.criterion {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r-lg); margin-bottom: 10px; overflow: hidden;
+}
+.crit-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px; background: var(--gray-lt);
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.crit-name { font-size: 13px; font-weight: 600; flex: 1; }
+.crit-score { font-size: 13px; font-weight: 700; color: var(--text2); }
+
+.levels-wrap { display: flex; }
+.level {
+  flex: 1; padding: 10px 11px; border-right: 1px solid var(--border);
+  cursor: pointer; transition: background .12s; min-width: 0;
+  position: relative;
+}
+.level:last-child { border-right: none; }
+.level:hover { background: var(--gray-lt); }
+.level.sel-0 { background: #fff0f0; }
+.level.sel-1 { background: #fffaf0; }
+.level.sel-2 { background: #f0faf6; }
+.level.sel-3 { background: #f0f5ff; }
+.level.sel-4 { background: #f5f0ff; }
+
+.dot {
+  display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; margin-right: 3px; vertical-align: middle;
+}
+.d0 { background: var(--red); }
+.d1 { background: var(--amber); }
+.d2 { background: var(--teal); }
+.d3 { background: var(--blue); }
+.d4 { background: var(--purple); }
+
+.lv-pts {
+  font-size: 11px; font-weight: 700;
+  display: block; margin-bottom: 3px;
+}
+.lv-desc { font-size: 12px; color: var(--text2); line-height: 1.4; }
+
+/* ── ANALYTICS ROW ── */
+.analytics-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; background: var(--gray-lt);
+  border-top: 1px solid var(--border); flex-wrap: wrap;
+  font-size: 12px; color: var(--text2);
+}
+.analytics-row input {
+  width: 72px; font-size: 12px; padding: 4px 8px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg2); color: var(--text); outline: none;
+}
+.analytics-row input:focus { border-color: var(--teal); }
+.ind {
+  font-size: 11px; font-weight: 600; padding: 2px 8px;
+  border-radius: 20px;
+}
+.ind-ok   { background: var(--teal-lt);  color: var(--teal-dk); }
+.ind-warn { background: var(--amber-lt); color: #854F0B; }
+.ind-low  { background: var(--red-lt);   color: #A32D2D; }
+
+/* ── FORMATIVA BANNER ── */
+.formativa-banner {
+  background: var(--purple-lt); border: 1px solid var(--purple-bd);
+  border-radius: var(--r); padding: 10px 14px; margin-bottom: 14px;
+  font-size: 12px; color: var(--purple); display: flex;
+  align-items: center; gap: 8px;
+}
+.formativa-banner strong { font-weight: 700; }
+
+/* ── PROGRESS BAR ── */
+.prog-wrap { margin-bottom: 14px; }
+.prog-label {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--text3); margin-bottom: 4px;
+}
+.prog-track {
+  height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.prog-fill {
+  height: 100%; border-radius: 3px; transition: width .3s ease;
+  background: var(--teal);
+}
+.prog-fill.warn { background: var(--amber); }
+.prog-fill.low  { background: var(--red); }
+
+/* ── SUMMARY TABLE ── */
+.sum-header {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+}
+.sum-title { font-size: 16px; font-weight: 700; }
+.sum-score { font-size: 36px; font-weight: 700; line-height: 1; }
+.sum-score span { font-size: 16px; color: var(--text3); }
+
+.section-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text3); margin: 16px 0 8px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th {
+  text-align: left; font-size: 10px; font-weight: 700;
+  color: var(--text3); text-transform: uppercase; letter-spacing: .05em;
+  padding: 6px 10px; border-bottom: 1px solid var(--border);
+}
+td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr.graded td:first-child { border-left: 3px solid var(--teal); }
+tr.formativa-row td { color: var(--text3); }
+tr.formativa-row td:first-child { border-left: 3px solid var(--purple); }
+
+/* ── FEEDBACK ── */
+.feedback-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 12px 14px; margin-bottom: 12px;
+}
+.feedback-box label {
+  font-size: 11px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .05em;
+  display: block; margin-bottom: 6px;
+}
+.feedback-box textarea {
+  width: 100%; min-height: 72px; border: none; background: transparent;
+  resize: none; font-size: 13px; color: var(--text); font-family: inherit;
+  outline: none; line-height: 1.6;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  font-size: 13px; font-weight: 500; padding: 8px 16px;
+  border-radius: var(--r); border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text); cursor: pointer;
+  transition: background .12s;
+}
+.btn:hover { background: var(--gray-lt); }
+.btn-p { background: var(--teal); border-color: var(--teal-dk); color: #fff; }
+.btn-p:hover { background: var(--teal-dk); }
+.btn-sm { font-size: 12px; padding: 5px 12px; }
+.act-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <span>Cargando configuración del curso...</span>
+</div>
+
+<!-- ERROR -->
+<div id="error-view">
+  <div class="error-box">
+    <h2>No se pudo cargar config.json</h2>
+    <p style="font-size:13px;color:var(--text2);margin-top:6px">
+      Asegúrate de que el archivo <strong>config.json</strong> está en la misma carpeta que este index.html y tiene el formato correcto.
+    </p>
+    <pre id="error-msg"></pre>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title">
+      <h1 id="curso-nombre">Cargando...</h1>
+      <p id="curso-meta"></p>
+    </div>
+    <span class="badge badge-sum" id="escala-badge"></span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('calificar')">Calificar</div>
+    <div class="tab" onclick="switchTab('resumen')">Resumen</div>
+  </div>
+
+  <!-- ════════ CALIFICAR ════════ -->
+  <div id="view-calificar" class="view active">
+
+    <!-- Score dashboard -->
+    <div class="score-dash" id="score-dash"></div>
+
+    <!-- Progreso sumativo -->
+    <div class="prog-wrap">
+      <div class="prog-label">
+        <span>Avance sumativo</span>
+        <span id="prog-txt">0 / 0 actividades calificadas</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Selector de actividad -->
+    <div class="act-selector">
+      <select id="act-select" onchange="loadActivity()">
+        <option value="">— Selecciona una actividad —</option>
+      </select>
+      <div class="act-meta" id="act-meta"></div>
+    </div>
+
+    <!-- Banner formativa -->
+    <div class="formativa-banner" id="form-banner" style="display:none">
+      <span>&#9432;</span>
+      <span><strong>Actividad formativa</strong> — Esta evaluación no incide en el puntaje sumativo final. Su función es retroalimentar el aprendizaje.</span>
+    </div>
+
+    <!-- Criterios -->
+    <div id="criteria-list"></div>
+
+    <!-- Feedback por actividad -->
+    <div class="feedback-box">
+      <label>Retroalimentación de la actividad</label>
+      <textarea id="act-feedback" placeholder="Escribe comentarios para esta actividad..."></textarea>
+    </div>
+
+    <div class="act-row">
+      <button class="btn btn-p" onclick="switchTab('resumen')">Ver resumen →</button>
+      <button class="btn btn-sm" onclick="resetActivity()">Limpiar actividad</button>
+    </div>
+  </div>
+
+  <!-- ════════ RESUMEN ════════ -->
+  <div id="view-resumen" class="view">
+    <div id="resumen-content"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ════════════════════════════════════════════════════
+let CFG = null;   // config.json completo
+let STATE = {
+  grading:   {},  // { actId: { critIdx: levelIdx } }
+  analytics: {},  // { actId: { critIdx: value } }
+  feedback:  {}   // { actId: string }
+};
+let currentActId = null;
+
+// ════════════════════════════════════════════════════
+// CARGA DE CONFIG
+// ════════════════════════════════════════════════════
+async function loadConfig() {
+  try {
+    const res = await fetch('./config.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status} — ${res.statusText}`);
+    CFG = await res.json();
+    initApp();
+  } catch (err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-view').style.display = 'block';
+    document.getElementById('error-msg').textContent = err.message;
+  }
+}
+
+// ════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════
+function initApp() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  // Topbar
+  document.getElementById('curso-nombre').textContent = CFG.curso.nombre;
+  document.getElementById('curso-meta').textContent =
+    `${CFG.curso.codigo} · ${CFG.curso.docente} · ${CFG.curso.periodo}`;
+  document.getElementById('escala-badge').textContent =
+    escalaLabel(CFG.curso.escala);
+
+  // Selector de actividades
+  const sel = document.getElementById('act-select');
+  CFG.actividades.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = `${a.tipo === 'sumativa' ? '★' : '◎'} ${a.nombre}`;
+    sel.appendChild(opt);
+  });
+
+  updateDashboard();
+}
+
+// ════════════════════════════════════════════════════
+// UTILIDADES DE ESCALA
+// ════════════════════════════════════════════════════
+function escalaLabel(esc) {
+  if (!esc) return '';
+  if (esc.tipo === 'porcentaje') return 'Porcentaje (%)';
+  if (esc.tipo === 'puntos') return `Puntos (base ${esc.base})`;
+  return esc.tipo;
+}
+
+function formatScore(raw, maxRaw, esc) {
+  if (esc.tipo === 'porcentaje') {
+    const pct = maxRaw > 0 ? Math.round(raw / maxRaw * 100) : 0;
+    return `${pct}%`;
+  }
+  // puntos: convertir a la base de la actividad
+  const base = esc.base || 10;
+  const val = maxRaw > 0 ? Math.round(raw / maxRaw * base) : 0;
+  return `${val}/${base}`;
+}
+
+function toFinalBase(raw, maxRaw, actEsc, cursoEsc) {
+  // Normaliza a 0–1 y aplica base del curso
+  if (maxRaw === 0) return 0;
+  const ratio = raw / maxRaw;
+  if (cursoEsc.tipo === 'porcentaje') return Math.round(ratio * 100);
+  return Math.round(ratio * (cursoEsc.base || 100));
+}
+
+// ════════════════════════════════════════════════════
+// MAX PTS DE UN CRITERIO
+// ════════════════════════════════════════════════════
+function maxPtsCrit(crit) {
+  return Math.max(...crit.niveles.map(n => +n.pts));
+}
+function maxPtsAct(act) {
+  return act.criterios.reduce((s, c) => s + maxPtsCrit(c), 0);
+}
+
+// ════════════════════════════════════════════════════
+// PUNTAJE GANADO
+// ════════════════════════════════════════════════════
+function earnedAct(actId) {
+  const act = CFG.actividades.find(a => a.id === actId);
+  if (!act) return 0;
+  const g = STATE.grading[actId] || {};
+  return act.criterios.reduce((s, c, ci) => {
+    const sel = g[ci];
+    return s + (sel !== undefined ? +c.niveles[sel].pts : 0);
+  }, 0);
+}
+
+// ════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════
+function updateDashboard() {
+  const sumativas  = CFG.actividades.filter(a => a.tipo === 'sumativa');
+  const formativas = CFG.actividades.filter(a => a.tipo === 'formativa');
+
+  // Calcula puntaje ponderado sumativo
+  let pesoTotal = sumativas.reduce((s, a) => s + (a.peso || 0), 0);
+  let scoreSum  = 0;
+  let gradedSum = 0;
+
+  sumativas.forEach(a => {
+    const g = STATE.grading[a.id];
+    const gradedCrits = g ? Object.keys(g).length : 0;
+    if (gradedCrits > 0) {
+      gradedSum++;
+      const earned = earnedAct(a.id);
+      const maxRaw = maxPtsAct(a);
+      const ratio  = maxRaw > 0 ? earned / maxRaw : 0;
+      scoreSum += ratio * (a.peso || 0);
+    }
+  });
+
+  const finalScore = pesoTotal > 0 ? Math.round(scoreSum / pesoTotal * (CFG.curso.escala.base || 100)) : 0;
+  const aprobacion = CFG.nota_aprobacion_sumativa || CFG.curso.escala.aprobacion || 60;
+  const statusColor = finalScore >= aprobacion ? 'var(--teal)' : finalScore >= aprobacion*0.7 ? 'var(--amber)' : 'var(--red)';
+  const statusLabel = finalScore >= aprobacion ? 'Aprobado' : finalScore >= aprobacion*0.7 ? 'En riesgo' : 'Reprobado';
+
+  // Formativas completadas
+  let gradedForm = 0;
+  formativas.forEach(a => {
+    const g = STATE.grading[a.id];
+    if (g && Object.keys(g).length > 0) gradedForm++;
+  });
+
+  document.getElementById('score-dash').innerHTML = `
+    <div class="score-card highlight">
+      <div class="score-val" style="color:${statusColor}">${finalScore}</div>
+      <div class="score-sub">Puntaje sumativo<br>base ${CFG.curso.escala.base || 100}</div>
+    </div>
+    <div class="score-card">
+      <div class="score-val" style="color:${statusColor}">${statusLabel}</div>
+      <div class="score-sub">Estado (mín. ${aprobacion})</div>
+    </div>
+    <div class="score-card">
+      <div class="score-val">${gradedSum}<span style="font-size:14px;color:var(--text3)">/${sumativas.length}</span></div>
+      <div class="score-sub">Sumativas<br>calificadas</div>
+    </div>
+    <div class="score-card">
+      <div class="score-val" style="color:var(--purple)">${gradedForm}<span style="font-size:14px;color:var(--text3)">/${formativas.length}</span></div>
+      <div class="score-sub">Formativas<br>revisadas</div>
+    </div>`;
+
+  // Barra de progreso
+  const pct = sumativas.length > 0 ? Math.round(gradedSum / sumativas.length * 100) : 0;
+  const fill = document.getElementById('prog-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'prog-fill' + (pct < 40 ? ' low' : pct < 70 ? ' warn' : '');
+  document.getElementById('prog-txt').textContent =
+    `${gradedSum} / ${sumativas.length} actividades sumativas calificadas`;
+}
+
+// ════════════════════════════════════════════════════
+// CARGAR ACTIVIDAD
+// ════════════════════════════════════════════════════
+function loadActivity() {
+  const sel = document.getElementById('act-select');
+  currentActId = sel.value || null;
+  if (!currentActId) {
+    document.getElementById('criteria-list').innerHTML = '';
+    document.getElementById('act-meta').innerHTML = '';
+    document.getElementById('form-banner').style.display = 'none';
+    document.getElementById('act-feedback').value = '';
+    return;
+  }
+  const act = CFG.actividades.find(a => a.id === currentActId);
+  if (!act) return;
+
+  // Meta de la actividad
+  const isForm = act.tipo === 'formativa';
+  document.getElementById('form-banner').style.display = isForm ? 'flex' : 'none';
+
+  const earned  = earnedAct(currentActId);
+  const maxRaw  = maxPtsAct(act);
+  const scoreStr = formatScore(earned, maxRaw, act.escala);
+
+  document.getElementById('act-meta').innerHTML = `
+    <span class="badge ${isForm ? 'badge-form' : 'badge-sum'}">${isForm ? 'Formativa' : 'Sumativa'}</span>
+    ${!isForm ? `<span style="font-size:12px;color:var(--text3)">Peso: <strong style="color:var(--text)">${act.peso}%</strong></span>` : ''}
+    <span style="font-size:12px;color:var(--text3)">${escalaLabel(act.escala)}</span>
+    <span style="font-size:13px;font-weight:700;color:var(--teal);margin-left:auto">${scoreStr}</span>`;
+
+  // Feedback guardado
+  document.getElementById('act-feedback').value = STATE.feedback[currentActId] || '';
+  document.getElementById('act-feedback').oninput = () => {
+    STATE.feedback[currentActId] = document.getElementById('act-feedback').value;
+  };
+
+  renderCriteria(act);
+  updateDashboard();
+}
+
+// ════════════════════════════════════════════════════
+// RENDER CRITERIOS
+// ════════════════════════════════════════════════════
+const DOTS    = ['d0','d1','d2','d3','d4'];
+const SEL_CLS = ['sel-0','sel-1','sel-2','sel-3','sel-4'];
+const PTS_COL = ['#E24B4A','#EF9F27','#1D9E75','#378ADD','#534AB7'];
+
+function enrichLabel(e) {
+  return { collab:'Colaboración', grade:'Calif. previa', study:'Accesos' }[e] || '';
+}
+function enrichBadge(e) {
+  if (!e || e==='none') return '';
+  const cls = { collab:'badge-col', grade:'badge-grd', study:'badge-std' }[e] || 'badge-none';
+  return `<span class="badge ${cls}">${enrichLabel(e)}</span>`;
+}
+function enrichInputLabel(e) {
+  return { collab:'Nº de posts', grade:'Calificación previa (%)', study:'Nº de accesos' }[e] || '';
+}
+
+function analyticsHint(type, val) {
+  if (val === undefined || val === '') return '';
+  const n = +val;
+  let cls, txt;
+  if (type==='collab') {
+    if (n===0)     { cls='ind-low';  txt='Sin participación'; }
+    else if (n<=2) { cls='ind-warn'; txt='Participación baja'; }
+    else           { cls='ind-ok';   txt='Participación activa'; }
+  } else if (type==='grade') {
+    if (n>=70)     { cls='ind-ok';   txt='Buen historial'; }
+    else if (n>=50){ cls='ind-warn'; txt='Historial regular'; }
+    else           { cls='ind-low';  txt='Historial bajo'; }
+  } else {
+    if (n===0)     { cls='ind-low';  txt='Sin accesos'; }
+    else if (n<=3) { cls='ind-warn'; txt='Acceso limitado'; }
+    else           { cls='ind-ok';   txt='Acceso regular'; }
+  }
+  return `<span class="ind ${cls}">${txt}</span>`;
+}
+
+function renderCriteria(act) {
+  const container = document.getElementById('criteria-list');
+  container.innerHTML = '';
+  const g  = STATE.grading[act.id]  || {};
+  const an = STATE.analytics[act.id] || {};
+  const maxRaw = maxPtsAct(act);
+
+  act.criterios.forEach((crit, ci) => {
+    const sel    = g[ci];
+    const earned = sel !== undefined ? +crit.niveles[sel].pts : 0;
+    const mx     = maxPtsCrit(crit);
+    const scoreStr = formatScore(earned, mx, act.escala);
+
+    const levHtml = crit.niveles.map((n, ni) => {
+      const ci2  = Math.min(ni, 4);
+      const isSel = sel === ni;
+      return `<div class="level${isSel ? ' '+SEL_CLS[ci2] : ''}"
+                   onclick="selectLevel('${act.id}',${ci},${ni})">
+        ${isSel ? `<span class="dot ${DOTS[ci2]}"></span>` : ''}
+        <span class="lv-pts" style="color:${PTS_COL[ci2]}">${n.pts} pts</span>
+        <span class="lv-desc">${n.desc}</span>
+      </div>`;
+    }).join('');
+
+    const obsVal = an[ci] !== undefined ? an[ci] : '';
+    const anHtml = crit.enrichment && crit.enrichment !== 'none' ? `
+      <div class="analytics-row">
+        <span>${enrichInputLabel(crit.enrichment)}:</span>
+        <input type="number" min="0" value="${obsVal}" placeholder="0"
+          onchange="updateAnalytics('${act.id}',${ci},this.value)">
+        ${analyticsHint(crit.enrichment, obsVal)}
+      </div>` : '';
+
+    const div = document.createElement('div');
+    div.className = 'criterion';
+    div.innerHTML = `
+      <div class="crit-header">
+        <span class="crit-name">${crit.nombre}</span>
+        ${enrichBadge(crit.enrichment)}
+        <span class="crit-score">${scoreStr}</span>
+      </div>
+      <div class="levels-wrap">${levHtml}</div>
+      ${anHtml}`;
+    container.appendChild(div);
+  });
+
+  // Actualizar meta score
+  const totalEarned = act.criterios.reduce((s, c, ci) => {
+    const sel = g[ci];
+    return s + (sel !== undefined ? +c.niveles[sel].pts : 0);
+  }, 0);
+  const scoreStr = formatScore(totalEarned, maxRaw, act.escala);
+  document.getElementById('act-meta').querySelector('[style*="teal"]').textContent = scoreStr;
+}
+
+function selectLevel(actId, critIdx, levelIdx) {
+  if (!STATE.grading[actId]) STATE.grading[actId] = {};
+  STATE.grading[actId][critIdx] = levelIdx;
+  const act = CFG.actividades.find(a => a.id === actId);
+  if (act) renderCriteria(act);
+  updateDashboard();
+}
+
+function updateAnalytics(actId, critIdx, val) {
+  if (!STATE.analytics[actId]) STATE.analytics[actId] = {};
+  STATE.analytics[actId][critIdx] = val;
+  const act = CFG.actividades.find(a => a.id === actId);
+  if (act) renderCriteria(act);
+}
+
+function resetActivity() {
+  if (!currentActId) return;
+  delete STATE.grading[currentActId];
+  delete STATE.analytics[currentActId];
+  delete STATE.feedback[currentActId];
+  loadActivity();
+}
+
+// ════════════════════════════════════════════════════
+// RESUMEN
+// ════════════════════════════════════════════════════
+function renderResumen() {
+  const aprobacion  = CFG.nota_aprobacion_sumativa || CFG.curso.escala.aprobacion || 60;
+  const cursoEsc    = CFG.curso.escala;
+  const sumativas   = CFG.actividades.filter(a => a.tipo === 'sumativa');
+  const formativas  = CFG.actividades.filter(a => a.tipo === 'formativa');
+  const pesoTotal   = sumativas.reduce((s,a) => s + (a.peso||0), 0);
+
+  let scoreSum = 0;
+  sumativas.forEach(a => {
+    const earned = earnedAct(a.id);
+    const maxRaw = maxPtsAct(a);
+    if (maxRaw > 0 && STATE.grading[a.id]) {
+      scoreSum += (earned / maxRaw) * (a.peso || 0);
+    }
+  });
+  const finalScore  = pesoTotal > 0 ? Math.round(scoreSum / pesoTotal * (cursoEsc.base||100)) : 0;
+  const statusColor = finalScore >= aprobacion ? 'var(--teal)' : finalScore >= aprobacion*0.7 ? 'var(--amber)' : 'var(--red)';
+  const statusLabel = finalScore >= aprobacion ? 'Aprobado' : finalScore >= aprobacion*0.7 ? 'En riesgo' : 'Reprobado';
+
+  // Tabla sumativas
+  let rowsSum = sumativas.map(a => {
+    const g       = STATE.grading[a.id];
+    const earned  = earnedAct(a.id);
+    const maxRaw  = maxPtsAct(a);
+    const scored  = g && Object.keys(g).length > 0;
+    const scoreStr = scored ? formatScore(earned, maxRaw, a.escala) : '–';
+    const contrib  = scored && maxRaw > 0
+      ? Math.round((earned/maxRaw) * (a.peso||0) / (pesoTotal||1) * (cursoEsc.base||100))
+      : 0;
+    const fb = STATE.feedback[a.id] || '';
+    return `<tr class="${scored?'graded':''}">
+      <td>${a.nombre}</td>
+      <td style="text-align:center">${a.peso}%</td>
+      <td style="text-align:center;font-weight:${scored?'700':'400'};color:${scored?'var(--text)':'var(--text3)'}">${scoreStr}</td>
+      <td style="text-align:center;color:var(--teal);font-weight:700">${scored ? '+'+contrib : '–'}</td>
+      <td style="font-size:11px;color:var(--text3)">${fb || '–'}</td>
+    </tr>`;
+  }).join('');
+
+  // Tabla formativas
+  let rowsForm = formativas.map(a => {
+    const g      = STATE.grading[a.id];
+    const earned = earnedAct(a.id);
+    const maxRaw = maxPtsAct(a);
+    const scored = g && Object.keys(g).length > 0;
+    const scoreStr = scored ? formatScore(earned, maxRaw, a.escala) : '–';
+    const fb = STATE.feedback[a.id] || '';
+    return `<tr class="formativa-row">
+      <td>${a.nombre}</td>
+      <td style="text-align:center"><span class="badge badge-form">Formativa</span></td>
+      <td style="text-align:center;font-weight:${scored?'700':'400'}">${scoreStr}</td>
+      <td style="text-align:center;color:var(--text3)">No suma</td>
+      <td style="font-size:11px;color:var(--text3)">${fb || '–'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('resumen-content').innerHTML = `
+    <div class="sum-header">
+      <div>
+        <div class="sum-title">${CFG.curso.nombre}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">${CFG.curso.codigo} · ${CFG.curso.periodo}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="sum-score" style="color:${statusColor}">${finalScore}<span>/${cursoEsc.base||100}</span></div>
+        <div style="font-size:12px;font-weight:700;color:${statusColor}">${statusLabel}</div>
+      </div>
+    </div>
+
+    <div class="section-title">Actividades sumativas — inciden en el puntaje final</div>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Actividad</th><th style="text-align:center">Peso</th>
+        <th style="text-align:center">Nota</th>
+        <th style="text-align:center">Aporte</th>
+        <th>Retroalimentación</th>
+      </tr></thead>
+      <tbody>${rowsSum}</tbody>
+    </table>
+    </div>
+
+    <div class="section-title">Actividades formativas — no suman al puntaje final</div>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Actividad</th><th style="text-align:center">Tipo</th>
+        <th style="text-align:center">Nota</th>
+        <th style="text-align:center">Impacto</th>
+        <th>Retroalimentación</th>
+      </tr></thead>
+      <tbody>${rowsForm}</tbody>
+    </table>
+    </div>
+
+    <div class="act-row" style="margin-top:16px">
+      <button class="btn btn-p" onclick="exportar()">Copiar resultado</button>
+      <button class="btn btn-sm" onclick="window.print()">Imprimir / PDF</button>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════
+// EXPORT
+// ════════════════════════════════════════════════════
+function exportar() {
+  const aprobacion = CFG.nota_aprobacion_sumativa || 60;
+  const cursoEsc   = CFG.curso.escala;
+  const sumativas  = CFG.actividades.filter(a => a.tipo === 'sumativa');
+  const pesoTotal  = sumativas.reduce((s,a) => s+(a.peso||0), 0);
+  let scoreSum = 0;
+  sumativas.forEach(a => {
+    const earned = earnedAct(a.id); const maxRaw = maxPtsAct(a);
+    if (maxRaw > 0 && STATE.grading[a.id]) scoreSum += (earned/maxRaw)*(a.peso||0);
+  });
+  const final = pesoTotal > 0 ? Math.round(scoreSum/pesoTotal*(cursoEsc.base||100)) : 0;
+
+  let lines = [
+    `=== ${CFG.curso.nombre} — ${CFG.curso.codigo} ===`,
+    `Docente: ${CFG.curso.docente} | Período: ${CFG.curso.periodo}`,
+    `Puntaje final sumativo: ${final}/${cursoEsc.base||100}\n`,
+    '--- SUMATIVAS ---'
+  ];
+  sumativas.forEach(a => {
+    const earned = earnedAct(a.id); const maxRaw = maxPtsAct(a);
+    const sc = STATE.grading[a.id] ? formatScore(earned, maxRaw, a.escala) : 'Sin calificar';
+    lines.push(`${a.nombre} (peso ${a.peso}%): ${sc}`);
+    if (STATE.feedback[a.id]) lines.push(`  Feedback: ${STATE.feedback[a.id]}`);
+  });
+  lines.push('\n--- FORMATIVAS ---');
+  CFG.actividades.filter(a=>a.tipo==='formativa').forEach(a => {
+    const earned = earnedAct(a.id); const maxRaw = maxPtsAct(a);
+    const sc = STATE.grading[a.id] ? formatScore(earned, maxRaw, a.escala) : 'Sin revisar';
+    lines.push(`${a.nombre}: ${sc} (no suma)`);
+    if (STATE.feedback[a.id]) lines.push(`  Feedback: ${STATE.feedback[a.id]}`);
+  });
+
+  const txt = lines.join('\n');
+  navigator.clipboard.writeText(txt)
+    .then(() => alert('¡Resultado copiado!'))
+    .catch(() => prompt('Copia este texto:', txt));
+}
+
+// ════════════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['calificar','resumen'][i]===name);
+  });
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  if (name==='resumen') renderResumen();
+}
+
+// ════════════════════════════════════════════════════
+// ARRANCAR
+// ════════════════════════════════════════════════════
+loadConfig();
+</script>
+</body>
+</html>

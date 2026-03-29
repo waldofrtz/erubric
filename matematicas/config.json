@@ -1,1 +1,167 @@
+{
+  "curso": {
+    "nombre": "Matemáticas II",
+    "codigo": "MAT-202",
+    "docente": "Prof. García",
+    "periodo": "2025-I",
+    "escala": {
+      "tipo": "puntos",
+      "base": 100,
+      "aprobacion": 70
+    }
+  },
 
+  "actividades": [
+    {
+      "id": "a1",
+      "nombre": "Tarea 1 — Álgebra lineal",
+      "tipo": "sumativa",
+      "peso": 15,
+      "escala": { "tipo": "puntos", "base": 10 },
+      "criterios": [
+        {
+          "nombre": "Planteamiento del problema",
+          "enrichment": "grade",
+          "niveles": [
+            { "pts": 0, "desc": "No plantea el problema correctamente" },
+            { "pts": 2, "desc": "Planteamiento parcial con errores" },
+            { "pts": 3, "desc": "Planteamiento correcto con pasos claros" },
+            { "pts": 4, "desc": "Planteamiento riguroso y bien documentado" }
+          ]
+        },
+        {
+          "nombre": "Procedimiento matemático",
+          "enrichment": "none",
+          "niveles": [
+            { "pts": 0, "desc": "Sin procedimiento o incorrecto" },
+            { "pts": 2, "desc": "Procedimiento con errores menores" },
+            { "pts": 3, "desc": "Procedimiento correcto" },
+            { "pts": 4, "desc": "Procedimiento correcto con justificación" }
+          ]
+        },
+        {
+          "nombre": "Resultado final",
+          "enrichment": "none",
+          "niveles": [
+            { "pts": 0, "desc": "Resultado incorrecto" },
+            { "pts": 1, "desc": "Resultado parcialmente correcto" },
+            { "pts": 2, "desc": "Resultado correcto" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "a2",
+      "nombre": "Foro de discusión — Semana 3",
+      "tipo": "sumativa",
+      "peso": 10,
+      "escala": { "tipo": "porcentaje" },
+      "criterios": [
+        {
+          "nombre": "Participación",
+          "enrichment": "collab",
+          "niveles": [
+            { "pts": 0, "desc": "Sin participación" },
+            { "pts": 25, "desc": "1 intervención básica" },
+            { "pts": 50, "desc": "2–3 intervenciones" },
+            { "pts": 75, "desc": "3+ intervenciones con réplicas" },
+            { "pts": 100, "desc": "Participación destacada y enriquecedora" }
+          ]
+        },
+        {
+          "nombre": "Calidad del aporte",
+          "enrichment": "none",
+          "niveles": [
+            { "pts": 0,   "desc": "Aportes sin fundamento" },
+            { "pts": 50,  "desc": "Aportes básicos con algún fundamento" },
+            { "pts": 75,  "desc": "Aportes bien argumentados" },
+            { "pts": 100, "desc": "Aportes excepcionales con referencias" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "a3",
+      "nombre": "Examen parcial",
+      "tipo": "sumativa",
+      "peso": 35,
+      "escala": { "tipo": "puntos", "base": 20 },
+      "criterios": [
+        {
+          "nombre": "Conocimiento conceptual",
+          "enrichment": "grade",
+          "niveles": [
+            { "pts": 0,  "desc": "No demuestra comprensión de conceptos" },
+            { "pts": 4,  "desc": "Comprensión básica con confusiones" },
+            { "pts": 7,  "desc": "Comprensión sólida de la mayoría de conceptos" },
+            { "pts": 10, "desc": "Dominio completo de todos los conceptos" }
+          ]
+        },
+        {
+          "nombre": "Aplicación y resolución",
+          "enrichment": "none",
+          "niveles": [
+            { "pts": 0,  "desc": "No resuelve los problemas planteados" },
+            { "pts": 3,  "desc": "Resuelve parcialmente" },
+            { "pts": 7,  "desc": "Resuelve correctamente la mayoría" },
+            { "pts": 10, "desc": "Resuelve todos con precisión y rigor" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "a4",
+      "nombre": "Ejercicios de práctica — Semana 1",
+      "tipo": "formativa",
+      "peso": 0,
+      "escala": { "tipo": "puntos", "base": 10 },
+      "criterios": [
+        {
+          "nombre": "Completitud",
+          "enrichment": "study",
+          "niveles": [
+            { "pts": 0,  "desc": "No entregó los ejercicios" },
+            { "pts": 5,  "desc": "Entregó menos del 50% de los ejercicios" },
+            { "pts": 8,  "desc": "Entregó entre 50–90% de los ejercicios" },
+            { "pts": 10, "desc": "Entregó todos los ejercicios" }
+          ]
+        },
+        {
+          "nombre": "Esfuerzo y proceso",
+          "enrichment": "none",
+          "niveles": [
+            { "pts": 0,  "desc": "Sin evidencia de esfuerzo" },
+            { "pts": 5,  "desc": "Esfuerzo básico, procesos incompletos" },
+            { "pts": 8,  "desc": "Buen esfuerzo con procesos documentados" },
+            { "pts": 10, "desc": "Excelente esfuerzo y reflexión visible" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "a5",
+      "nombre": "Autoevaluación — Semana 5",
+      "tipo": "formativa",
+      "peso": 0,
+      "escala": { "tipo": "porcentaje" },
+      "criterios": [
+        {
+          "nombre": "Reflexión sobre el aprendizaje",
+          "enrichment": "none",
+          "niveles": [
+            { "pts": 0,   "desc": "Sin reflexión o muy superficial" },
+            { "pts": 50,  "desc": "Reflexión básica sobre algunos aspectos" },
+            { "pts": 75,  "desc": "Reflexión profunda y honesta" },
+            { "pts": 100, "desc": "Reflexión crítica con plan de mejora concreto" }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "nota_aprobacion_sumativa": 70
+}
